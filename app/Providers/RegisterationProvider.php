@@ -16,6 +16,9 @@ class RegisterationProvider extends ServiceProvider
         $this->app->bind(UserService::class, function(){
             return new UserService();
           });
+          $this->app->bind(ProductService::class, function(){
+            return new ProductService();
+          });
     }
 
     /**

@@ -27,5 +27,9 @@ return [
      'login' => 'Login successfully.',
      'send_verification_code' => 'We have send a otp code on your email, Please check and verify it!',
      'user_exist' => "User already exist!",
-     'user_register_by_firebase'=> 'user has been successfully registered through sign in with google.'
+     'user_register_by_firebase'=> 'user has been successfully registered through sign in with google.',
+     'category_exist'=>'entered category already exist',
+     'category_added'=>'catagory added successfully',
+     'invalid_parent_id'=>'enetred id does not exist',
+     'category_updated'=>'category updated successfully'
 ];

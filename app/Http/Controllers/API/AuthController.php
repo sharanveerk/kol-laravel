@@ -299,7 +299,7 @@ class AuthController extends Controller
                 //email does not exist
             }
         } catch (\Throwable $th) {
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
 
@@ -327,7 +327,7 @@ class AuthController extends Controller
                     $updateOtp = $this->userService->insertNewOtp($otp,$checkEmail['id'],$checkEmail['email_verification_code'], $request['email']);
                     if($updateOtp){
                         $msg= __("api_string.send_verification_code");
-                        return response()->json(["statusCode"=>200,"status"=>true,"message"=>$msg,'otp'=>$otp]);
+                        return response()->json(["statusCode"=>200,"status"=>true,"message"=>$msg,'otp'=>$otp,"email"=>$request['email']]);
                     }
                 }else{
                     $msg= __("api_string.verifie_your_email");
@@ -338,7 +338,7 @@ class AuthController extends Controller
                 return response()->json(["statusCode"=>401,"status"=>false,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
     
@@ -377,43 +377,43 @@ class AuthController extends Controller
             }
 
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
 
-    public function forgetPasswords(Request $request)
-    {
-        $valdiation = Validator::make($request->all(),[
-            'email' => 'required|email',
-        ]);
-        if($valdiation->fails()) {
-            $msg = __("api_string.invalid_fields");
-            return response()->json(["message"=>$msg, "statusCode"=>401]);
-        }
-         $response = $this->userService->forgetPassword($request);
-          if(($response)==true){
-            $msg = __("api_string.forget_password_link");
-                $response1 = [];
-                $response1['message'] = $msg;
-                $response1['statusCode'] =200;
-                $response1['email'] =$request->email;
-                return response()->json(["Email"=>$response1['email'],"statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
-        }
-       elseif(($response)==false)
-       {
-        $msg = __("api_string.verifie_your_email");
-        $response1 = [];
-        $response1['message'] = $msg;
-        $response1['statusCode'] =401;
-        return response()->json(["statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
-       }
-       else
-       {
-           dd($response);
-        $msg = __("api_string.email_not_exist");
-        return response()->json(["Status"=>false,"message"=>$msg, "statusCode"=>401]);
-       }
-    }
+    // public function forgetPasswords(Request $request)
+    // {
+    //     $valdiation = Validator::make($request->all(),[
+    //         'email' => 'required|email',
+    //     ]);
+    //     if($valdiation->fails()) {
+    //         $msg = __("api_string.invalid_fields");
+    //         return response()->json(["message"=>$msg, "statusCode"=>401]);
+    //     }
+    //      $response = $this->userService->forgetPassword($request);
+    //       if(($response)==true){
+    //         $msg = __("api_string.forget_password_link");
+    //             $response1 = [];
+    //             $response1['message'] = $msg;
+    //             $response1['statusCode'] =200;
+    //             $response1['email'] =$request->email;
+    //             return response()->json(["Email"=>$response1['email'],"statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
+    //     }
+    //    elseif(($response)==false)
+    //    {
+    //     $msg = __("api_string.verifie_your_email");
+    //     $response1 = [];
+    //     $response1['message'] = $msg;
+    //     $response1['statusCode'] =401;
+    //     return response()->json(["statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
+    //    }
+    //    else
+    //    {
+    
+    //     $msg = __("api_string.email_not_exist");
+    //     return response()->json(["Status"=>false,"message"=>$msg, "statusCode"=>401]);
+    //    }
+    // }
     
     public function getUserDetailsByID(Request $request){
         $user = Auth::user();

@@ -7,6 +7,7 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\API\ResetPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CategoryController;
 
 
 Route::middleware(['api'])->group(function () {
@@ -24,6 +25,7 @@ Route::middleware(['api'])->group(function () {
     // Route::post('resetPassword', [ResetPasswordController::class, 'resetPassword']);
     Route::post('resend-verification-email', [AuthController::class, 'sendVerificationEmail']);
     Route::post('logout', [AuthController::class, 'logout']);
+    
   });
 
   Route::group(['middleware' => ['jwt.verify']], function() {
@@ -32,11 +34,18 @@ Route::middleware(['api'])->group(function () {
   });
   
   Route::group(['middleware' => 'isAdmin'], function () {
+
     Route::get('view-all-user',[UserController::Class,'displayAllUser']);
     Route::get('view-user-details', [UserController::class, 'getUserDetailsByID']);
     Route::post('update-user-data', [UserController::class, 'updateUserDetails']);
     Route::get('get-user-address', [UserController::class, 'addUserAddress']);
     Route::post('add-user-address', [UserController::class, 'storeUserAddress']);
+    Route::get('category/list',[CategoryController::Class,'getCategory']);
+    Route::post('category/store',[CategoryController::Class,'store']);
+    Route::get('category/view',[CategoryController::Class,'viewCategory']);
+    Route::put('category/edit',[CategoryController::Class,'updateCategory']);
+    Route::put('category/edit/status',[CategoryController::Class,'CategoryStatus']);
+
   });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
