@@ -31,5 +31,6 @@ return [
      'category_exist'=>'entered category already exist',
      'category_added'=>'catagory added successfully',
      'invalid_parent_id'=>'enetred id does not exist',
-     'category_updated'=>'category updated successfully'
+     'category_updated'=>'category updated successfully',
+     'category_not_exist'=>'entered category does not exist',
 ];

@@ -71,35 +71,41 @@ class ProductService{
             } else {
                 $filterData[$i]['parent_id'] = ''; 
                 $filterData[$i]['parent_name'] = ''; 
-              
             }
             $filterData[$i]['image'] = $record['image'];
             $filterData[$i]['status'] = $record['status'];
             $i++;
-
-
         }
         return $filterData;
-
-      
-     }
+    
+    }
      public function updateCategory($request,$imageUrl){
         $updateArrData = [];
         if($imageUrl==null){
             $updateArrData = ["name"=>$request['name'],"description"=>$request['description'],"parent_id"=>$request['parent_id']];
         }else{
             $updateArrData = ["name"=>$request['name'],"description"=>$request['description'],"parent_id"=>$request['parent_id'],"image"=>$imageUrl];
-            
         }
         $response= Category::where('id',$request['id'])->update($updateArrData);
         if($response){
             return true;
         }
         else{
-            return false;
+            return false;$updatePass = User::where('email',$email)->update(['password'=>Hash::make($request['new_password'])]);
         }
-
     }
     
-
-}
+    public function updateCategoryStatus($request)
+    {
+            $checkStatusUpdated = Category::where('id',$request['id'])->update(['status'=>1]);
+            if($checkStatusUpdated)
+            {
+                $msg= __("api_string.category_updated");
+                return $msg;
+            }
+            else {
+                $msg= __("api_string.category_not_exist");
+                return $msg;
+            }
+        }
+    }

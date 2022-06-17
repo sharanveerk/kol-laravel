@@ -16,6 +16,7 @@ Route::middleware(['api'])->group(function () {
     Route::post('verify-OTP',[AuthController::Class,'verifyOTP']);
     Route::post('resend-OTP',[AuthController::Class,'resendOTP']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('login-with-google', [AuthController::class, 'loginWithGoogle']);
     Route::patch('check-email-forgot-password',[AuthController::Class,'checkEmailForgotPassword']);
     Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
     // Route::get('user_verification',[AuthController::Class,'user_verification'])->name('user_verification');
@@ -44,7 +45,7 @@ Route::middleware(['api'])->group(function () {
     Route::post('category/store',[CategoryController::Class,'store']);
     Route::get('category/view',[CategoryController::Class,'viewCategory']);
     Route::put('category/edit',[CategoryController::Class,'updateCategory']);
-    Route::put('category/edit/status',[CategoryController::Class,'CategoryStatus']);
+    Route::put('category/edit/status',[CategoryController::Class,'ChangeCategoryStatus']);
 
   });
 

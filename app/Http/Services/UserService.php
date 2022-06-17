@@ -1,5 +1,5 @@
-    <?php
-    use   App\Http\Services;
+<?php
+namespace  App\Http\Services;
     use App\Models\User;
     use App\Models\UserTokens;
     use App\Models\UserAddress;

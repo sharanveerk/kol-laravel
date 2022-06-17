@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -56,9 +55,9 @@ class AuthController extends Controller
                         if($token){
                             $response = [];
                             $response['token'] = $token;
-                            $response['user_name'] = $request['name'];
-                            $response['email'] = $request['email'];
-                            $response['role_id'] = $request['role_id'];
+                            $response['user_name'] = $checkEmail['name'];
+                            $response['email'] = $checkEmail['email'];
+                            $response['role_id'] = $checkEmail['role_id'];
                             $msg =  __("api_string.user_register_by_firebase");
                             return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
                         }else{
@@ -162,6 +161,41 @@ class AuthController extends Controller
      * 
      */
     
+
+    public function loginWithGoogle(Request $request){
+        try {
+
+            $valdiation = Validator::make($request->all(), [
+                'name'=>'required',
+                'email' => 'required',
+                'firebase_token'=>'required',
+            ]);
+            if($valdiation->fails()) {
+                $msg = __("api_string.invalid_fields");
+                return response()->json(["message"=>$msg, "statusCode"=>401]);
+            }
+            if($request['firebase_token']){
+                $checkEmail = $this->userService->checkEmail($request['email']);
+                if($checkEmail){
+                    $token = $this->userService->generateJwtToken($checkEmail);
+                    if($token){
+                        $response = [];
+                        $response['token'] = $token;
+                        $response['user_name'] = $request['name'];
+                        $response['email'] = $request['email'];
+                        $response['role_id'] = $request['role_id'];
+                        $msg =  __("api_string.user_register_by_firebase");
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
+                    }
+                }else{
+                    //en
+                }
+            }
+        }catch (\Throwable $th) {
+        $msg= __("api_string.error");
+        return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
     public function login(Request $request){ 
         try {
             $valdiation = Validator::make($request->all(), [
