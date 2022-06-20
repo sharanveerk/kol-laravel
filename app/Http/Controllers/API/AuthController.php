@@ -169,6 +169,7 @@ class AuthController extends Controller
                 'name'=>'required',
                 'email' => 'required',
                 'firebase_token'=>'required',
+                
             ]);
             if($valdiation->fails()) {
                 $msg = __("api_string.invalid_fields");
@@ -188,8 +189,10 @@ class AuthController extends Controller
                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
                     }
                 }else{
-                    //en
-                }
+                    $msg =  __("api_string.incorrect_email_id");
+                    return response()->json(["status"=>false,'statusCode'=>500,"message"=>$msg,]);
+                    }
+                
             }
         }catch (\Throwable $th) {
         $msg= __("api_string.error");

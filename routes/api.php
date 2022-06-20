@@ -44,8 +44,10 @@ Route::middleware(['api'])->group(function () {
     Route::get('category/list',[CategoryController::Class,'getCategory']);
     Route::post('category/store',[CategoryController::Class,'store']);
     Route::get('category/view',[CategoryController::Class,'viewCategory']);
-    Route::put('category/edit',[CategoryController::Class,'updateCategory']);
+    Route::put('category/edit',[CategoryController::Class,'editCategory']);
     Route::put('category/edit/status',[CategoryController::Class,'ChangeCategoryStatus']);
+
+    Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);
 
   });
 

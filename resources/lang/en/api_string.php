@@ -33,4 +33,5 @@ return [
      'invalid_parent_id'=>'enetred id does not exist',
      'category_updated'=>'category updated successfully',
      'category_not_exist'=>'entered category does not exist',
+     'incorrect_email_id'=>'Incorrect email! please signUp first'
 ];

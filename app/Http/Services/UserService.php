@@ -44,7 +44,8 @@ namespace  App\Http\Services;
                     $token = JWTAuth::claims($customClaims)->attempt($input);
                 }else{
                     $input = $request->only('email', 'password');
-                    $token = JWTAuth::attempt($input); 
+                    $token = JWTAuth::attempt($input);
+                    dd($token); 
                     Mail::to($request->email)->send(new \App\Mail\VerifyMail(["url"=>$otp]));
                 }
                 // // Store token in user tokens table
