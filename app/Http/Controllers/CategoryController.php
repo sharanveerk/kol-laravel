@@ -17,11 +17,10 @@ class CategoryController extends Controller{
         $successMsg = __('api_string.success_message');
         return response()->json(['status'=>true,"statusCode"=>200,"data"=>$allCategories]);
     }
-    public function store(Request $request)
-    {
+    public function store(Request $request){
         try {
             $valdiation = Validator::make($request->all(),[
-                'name' => 'required|unique:categories',
+                'name' => 'required|',
                 'description' => 'required',
                 'image' => 'required|mimes:png,jpeg,jpg',
             ]);
@@ -75,18 +74,18 @@ class CategoryController extends Controller{
         }
 
         public function editCategory(Request $request){
-
+        
             try {
-                // $valdiation = Validator::make($request->all(),[
-                //     'id' => 'required|integer',
-                //     'name'=>'nullable',
-                //     'description'=>'nullable'
-                //  ]);
+                $valdiation = Validator::make($request->all(),[
+                    'id' => 'required|integer',
+                    'name'=>'nullable',
+                    'description'=>'nullable'
+                 ]);
 
-                // if($valdiation->fails()) {
-                //     $msg = __("api_string.invalid_fields");
-                //     return response()->json(["status"=>false,'statusCode'=>422,"message"=>$msg]);
-                // }
+                if($valdiation->fails()) {
+                    $msg = __("api_string.invalid_fields");
+                    return response()->json(["status"=>false,'statusCode'=>422,"message"=>$msg]);
+                }
                 
                     if($request['image']){
                          $imageUrl = Category::makeImageUrl($request['image']);
@@ -153,7 +152,6 @@ class CategoryController extends Controller{
                        $checkCategory = $this->productService->getCategoryById($request['id']);
                        if($checkCategory){
                            $checkCategory = $this->productService->updateCategory($request,$imageUrl);
-                           dd($checkCategory);
                            $msg=__("api_string.category_updated");
                            return response()->json(["status"=>true,'statusCode'=>202,"message"=>$msg]);
                        }else{

@@ -13,10 +13,11 @@ class Category extends Model
 
     public static function makeImageUrl($file)
     {
+        
         $uploadFolder = 'category';
         $name = preg_replace("/[^a-z0-9\._]+/", "-", strtolower(time() . rand(1, 9999) . '.' . $file->getClientOriginalName()));
         if ($file->move(public_path() . '/uploads/'.$uploadFolder, str_replace(" ", "", $name))) {
-            return url('/') . '/uploads/'.$uploadFolder.'/' . $name;
+            return url('/') . '/uploads/'.$uploadFolder.'/' .$name;
         }
     }
     public function getCategoryParent(){

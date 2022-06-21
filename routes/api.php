@@ -17,10 +17,11 @@ Route::middleware(['api'])->group(function () {
     Route::post('resend-OTP',[AuthController::Class,'resendOTP']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('login-with-google', [AuthController::class, 'loginWithGoogle']);
+    Route::put('update-role', [AuthController::class, 'updateRole']);
     Route::patch('check-email-forgot-password',[AuthController::Class,'checkEmailForgotPassword']);
     Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
     // Route::get('user_verification',[AuthController::Class,'user_verification'])->name('user_verification');
-   
+    Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
     Route::get('varifyResetpassword',[ResetPasswordController::Class,'varifyResetpassword'])->name('varifyResetpassword');
     Route::post('changePassword',[ResetPasswordController::Class,'changePassword'])->name('changePassword');
     // Route::post('resetPassword', [ResetPasswordController::class, 'resetPassword']);
@@ -44,7 +45,7 @@ Route::middleware(['api'])->group(function () {
     Route::get('category/list',[CategoryController::Class,'getCategory']);
     Route::post('category/store',[CategoryController::Class,'store']);
     Route::get('category/view',[CategoryController::Class,'viewCategory']);
-    Route::put('category/edit',[CategoryController::Class,'editCategory']);
+    Route::post('category/edit',[CategoryController::Class,'editCategory']);
     Route::put('category/edit/status',[CategoryController::Class,'ChangeCategoryStatus']);
 
     Route::post('updateCategory',[CategoryController::Class,'makeUpdation']);

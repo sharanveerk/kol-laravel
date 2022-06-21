@@ -33,5 +33,9 @@ return [
      'invalid_parent_id'=>'enetred id does not exist',
      'category_updated'=>'category updated successfully',
      'category_not_exist'=>'entered category does not exist',
-     'incorrect_email_id'=>'Incorrect email! please signUp first'
+     'incorrect_email_id'=>'Incorrect email! please signUp first',
+     'invalid_firebase_credentials'=>'invalid firebase credentials',
+     'assign_role_id' => 'Please choose roles!',
+     'role_updated'=>'role id updated successfully',
+     'role_updated_status'=>'role  updations failed',
 ];

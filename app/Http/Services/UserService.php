@@ -22,7 +22,7 @@ namespace  App\Http\Services;
             return $allUserData ;
         }
 
-        public function createUser($request,$otp){
+        public function createUser($request,$otp,$roleId){
         
             // Create new user
             $user = new User();
@@ -31,7 +31,7 @@ namespace  App\Http\Services;
             $user->phone = $request->phone;
             $user->password = Hash::make($request->password);
             $user->otp = $otp;
-            $user->role_id = $request['role_id'];
+            $user->role_id = $roleId;
             $user->firebase_token = ($request['firebase_token']) ? $request['firebase_token'] : NULL;
             $checkUserSave = $user->save(); 
             $lastUserId = $user->id;
@@ -39,13 +39,12 @@ namespace  App\Http\Services;
                 //Generate jwt token
                 $token = '';
                 if($otp == null){
-                    $customClaims = ['name'=>$request['name'],'email'=>$request['email'], 'role_id'=>$request['role_id'],'firebase_token' =>$request['firebase_token']];
+                    $customClaims = ['name'=>$request['name'],'email'=>$request['email'], 'role_id'=>$roleId,'firebase_token' =>$request['firebase_token']];
                     $input = $request->only('email', 'password');
                     $token = JWTAuth::claims($customClaims)->attempt($input);
                 }else{
                     $input = $request->only('email', 'password');
                     $token = JWTAuth::attempt($input);
-                    dd($token); 
                     Mail::to($request->email)->send(new \App\Mail\VerifyMail(["url"=>$otp]));
                 }
                 // // Store token in user tokens table
@@ -60,7 +59,6 @@ namespace  App\Http\Services;
         }
 
         public function generateJwtToken($checkEmail){
-
             $customClaims = ['name'=>$checkEmail['name'],'email'=>$checkEmail['email'], 'role_id'=>$checkEmail['role_id'],'firebase_token' =>$checkEmail['firebase_token']];
             $input =[];
             $input['email']= $checkEmail['email'];
@@ -78,9 +76,10 @@ namespace  App\Http\Services;
             }
         }
 
-    
-    
-        public function checkEmail($email){
+        public function updateRoleByUserEmail($request){
+            return User::where('email', $request['email'])->update(['role_id'=>$request['role_id']]);
+         }
+         public function checkEmail($email){
         return User::where('email',$email)->first();
         }
 
@@ -163,12 +162,6 @@ namespace  App\Http\Services;
             }
         }
 
-        // public function updateUserOtp($email,$otp){
-
-        //     $updateResponse = User::where('')
-            
-        // }
-
         public function forgetPassword($request){
             $checkEmail = User::select('email','id','is_varified')->where('email', $request['email'])->first();
             if($checkEmail){
@@ -189,20 +182,20 @@ namespace  App\Http\Services;
 
             
         
-        public function varifyResetpassword($request){
-                $userDetails =  User::select('id','email','is_varified','password_reset_code')->where('password_reset_code',$request->verification_code)->first();
-                if(!empty($userDetails)){
-                    return response()->json([
-                        'message' => 'reset password code verified',
-                        'email' => $userDetails['email'],
-                        'user_id' => $userDetails['id']
-                    ], 200);
-                }else{
-                    return response()->json([
-                        'message' => 'code not verified'
-                    ], 200);
-                }
-        }
+        // public function varifyResetpassword($request){
+        //         $userDetails =  User::select('id','email','is_varified','password_reset_code')->where('password_reset_code',$request->verification_code)->first();
+        //         if(!empty($userDetails)){
+        //             return response()->json([
+        //                 'message' => 'reset password code verified',
+        //                 'email' => $userDetails['email'],
+        //                 'user_id' => $userDetails['id']
+        //             ], 200);
+        //         }else{
+        //             return response()->json([
+        //                 'message' => 'code not verified'
+        //             ], 200);
+        //         }
+        // }
         
         public function changePassword($request)
             {
@@ -219,133 +212,42 @@ namespace  App\Http\Services;
     
                 return response()->json(['message' => 'password updated successfully'],200);
             }
-
-        public function updateData(Request $request)
-        {  
+            
+            public function checkLogOut($request){ 
             $header = $request->header('Authorization', '');
             if (Str::startsWith($header, 'Bearer ')) {
                 $token = Str::substr($header, 7);
             }
-        
             if($token){
-                $user = Auth::user(); 
-                $valdiation = Validator::make($request->all(),[
-                    'name'=>'required',
-                    'last_name'=>'required|nullable',
-                    'profile_image' => 'required|nullable',
-                    'phone'=>'string|max:13|',
-                    'gender'=>'string',
-                    'date_of_birth'=>'string',
-                    'language'=>'string',
-                    'whatsapp_chat_link' => 'required|nullable',
-                    'telegram_id' => 'required|nullable',
-                    'instagram_followers' => 'required|nullable',
-                ]);
-            
-                if($valdiation->fails()){
-                    return response()->json($valdiation->errors(), 202);
-                }
-                else{
-                    $user = Auth::user();
-            
-            
-                    $user = User::find(Auth::user()->id);
-                    $user->name = $request->input('name');
-                    $user->last_name = $request->input('last_name');
-                    $user->gender = $request->input('gender');
-                    $user->date_of_birth = $request->input('date_of_birth');
-                    $user->language = $request->input('language');
-                    $user->profile_image = $request->input('profile_image');
-                    $user->description = $request->input('description');
-                    $user->whatsapp_chat_link = $request->input('whatsapp_chat_link'); 
-                    $user->telegram_id = $request->input('telegram_id');
-                    $user->tiktok_followers = $request->input('tiktok_followers');
-                    $user->instagram_followers = $request->input('instagram_followers');
-            
-            
-                    $user->update();
-                    return response()->json(['statusCode'=> 201,
-                    'success'=> true,
-                    'message'=> "record updated successfully",
-                    'user'=>$user]);
-                }
-        }
-    }
-
-    public function addAdress($request){
-    
-        $header = $request->header('Authorization', '');
-        if (Str::startsWith($header, 'Bearer ')) {
-            $token = Str::substr($header, 7);
-        if($token)
-        {
-            $user=Auth::user()->id;
-            $id=$user;
-        try{
-        $data = new UserAddress();
-        $data->user_id = $id;
-        $data->address = $request->address;
-        $data->city = $request->city;
-        $data->postal_code =$request->postal_code;
-        $data->contry = $request->contry;
-        $data->address_type = $request->address_type;
-        $checkIfInserted = $data->save();
-        return $checkIfInserted;
-        }catch(Exception $e){
-        throw new \Exception('Something Went Wrong, Please Try Again !');
-        }
-    }
-    }
-    }
-
-
-        public function checkLogOut($request){
-
-                // $header=$request->header();  
-                $header = $request->header('Authorization', '');
-        if (Str::startsWith($header, 'Bearer ')) {
-            $token = Str::substr($header, 7);
-        }
-            
-                if($token){
-                    $expiredToken = UserTokens::select('token')->where('token', $token)->first();
-                    if($expiredToken){
-                        
-                        UserTokens::where('token', $token)->delete();
-                        return response()->json(['success' => true,'statusCode'=>200,'message' => 'User logged out successfully']);
+                $expiredToken = UserTokens::select('token')->where('token', $token)->first();
+                if($expiredToken){
+                    UserTokens::where('token', $token)->delete();
+                    return response()->json(['success' => true,'statusCode'=>200,'message' => 'User logged out successfully']);
                     }else{
-
                         return response()->json(['success' => false,'statusCode'=>true,'message' => 'Sorry, the user cannot be logged out']);
-                    }        User::where('id', $request->user_id)->update(['password' => Hash::make($request->password),'password_reset_code'=>NULL]);
-
-                    }
-        }
-
-
-
-
-
-
-            public function resetPassword($request){
-                $header = $request->header('Authorization', '');
-                if (Str::startsWith($header, 'Bearer ')) {
-                    $token = Str::substr($header, 7);
-                }
-                // dd($token);
-                if($token){
-                    $valdiation = Validator::make($request->all(),[
-                        'current_password'=> 'required|min:6',
-                        'new_password' => 'required|min:6',
-                        'confirm_new_password'=>'required|same:new_password',
-                    ]
-                );
-                if($valdiation->fails()){
-                    return response()->json($valdiation->errors(), 202);
-                }
-                User::select('password')->where('id', $request->user_id)->update(['password' => Hash::make($request->current_password)]);
-                $currentUser = Auth::user();
-            
-
+                    }        
                 }
             }
+            public function resetPassword($request){
+                $header = $request->header('Authorization', '');
+                        if (Str::startsWith($header, 'Bearer ')) {
+                            $token = Str::substr($header, 7);
+                        }
+                        // dd($token);
+                        if($token){
+                            $valdiation = Validator::make($request->all(),[
+                                'current_password'=> 'required|min:6',
+                                'new_password' => 'required|min:6',
+                                'confirm_new_password'=>'required|same:new_password',
+                            ]
+                        );
+                        if($valdiation->fails()){
+                            return response()->json($valdiation->errors(), 202);
+                        }
+                        User::select('password')->where('id', $request->user_id)->update(['password' => Hash::make($request->current_password)]);
+                        $currentUser = Auth::user();
+                    
+
+                        }
+                    }
             }

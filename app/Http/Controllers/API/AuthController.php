@@ -32,7 +32,7 @@ class AuthController extends Controller
      * call user service function to save record in database and send mail to user for verification the valid mail
      * @param request
      * @return json format
-     * @author Vikaram
+     * @author Vikram
      */
     
     public function registration(Request $request) {
@@ -66,7 +66,7 @@ class AuthController extends Controller
                         }
                 }else{
                     //create users
-                    $saveResponse = $this->userService->createUser($request,$otp=null);
+                    $saveResponse = $this->userService->createUser($request,$otp=null,$request['role_id']);
                     if($saveResponse){
                         $response = [];
                         $response['token'] = $saveResponse;
@@ -87,10 +87,10 @@ class AuthController extends Controller
                     return response()->json(["status"=>true,'statusCode'=>301,"message"=>$msg]);
                 }else{
                     //create users
-                    $saveResponse = $this->userService->createUser($request,$otp);
+                    $saveResponse = $this->userService->createUser($request,$otp,$request['role_id']);
                     if($saveResponse){
                         $msg =  __("api_string.verify_email");
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"email"=>$request['email']]); 
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"role_id"=>$request['role_id'],"email"=>$request['email'],]); 
                     }
                 }
             }
@@ -123,13 +123,17 @@ class AuthController extends Controller
             $otp = $request['otp'];
             $checkValidOtp = $this->userService->checkOtp($request);
             if($checkValidOtp){ 
-                if($checkValidOtp['is_varified'] !== 1){
+                if($checkValidOtp['is_varified'] != 1){
                     $makeUserVerify = $this->userService->makeUserVerifiy($otp);
                     if($makeUserVerify){
                         $verifyToken = $this->userService->verifyEmailOtp($otp,$checkValidOtp['id']);
                          $response = [];
-                         $response['token'] = $verifyToken;
-                         $response['user_details'] = $checkValidOtp;
+                        $response['token'] = $verifyToken['token'];
+                        $response['user_name'] = $checkValidOtp['name'];
+                        $response['email'] = $checkValidOtp['email'];
+                        $response['role_id'] = $checkValidOtp['role_id'];
+                        $response['otp'] = $checkValidOtp['otp'];
+                        $response['status'] = $checkValidOtp['status'];
                          if($verifyToken){
                             $msg =  __("api_string.successfully_verfied");
                             return response()->json(["statusCode"=>200, "status"=>true, "message"=>$msg, "data"=>$response]);
@@ -153,50 +157,80 @@ class AuthController extends Controller
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }    
     }
-    /**
-     * @param request
-     * validate data, check mail exit or not generate otp, 
-     * @return mail message
-     * @author sharanveer kannaujiya
-     * 
-     */
+    
     
 
     public function loginWithGoogle(Request $request){
-        try {
-
-            $valdiation = Validator::make($request->all(), [
-                'name'=>'required',
-                'email' => 'required',
-                'firebase_token'=>'required',
-                
+       try {
+            $valdiation = Validator::make($request->all(),[
+                'name' => 'required',
+                'email' => 'required|email',
+                'firebase_token'=>'required'
             ]);
             if($valdiation->fails()) {
                 $msg = __("api_string.invalid_fields");
-                return response()->json(["message"=>$msg, "statusCode"=>401]);
+                return response()->json(["message"=>$msg, "statusCode"=>422]);
             }
-            if($request['firebase_token']){
-                $checkEmail = $this->userService->checkEmail($request['email']);
-                if($checkEmail){
+            $checkEmail = $this->userService->checkEmail($request['email']);
+            if($checkEmail){
                     $token = $this->userService->generateJwtToken($checkEmail);
                     if($token){
                         $response = [];
                         $response['token'] = $token;
-                        $response['user_name'] = $request['name'];
-                        $response['email'] = $request['email'];
-                        $response['role_id'] = $request['role_id'];
+                        $response['user_name'] = $checkEmail['name'];
+                        $response['email'] = $checkEmail['email'];
+                        $response['role_id'] = $checkEmail['role_id'];
                         $msg =  __("api_string.user_register_by_firebase");
                         return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
+                    }else{
+                        $msg = __("api_string.error");
+                        return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);                
                     }
-                }else{
-                    $msg =  __("api_string.incorrect_email_id");
-                    return response()->json(["status"=>false,'statusCode'=>500,"message"=>$msg,]);
-                    }
-                
+            }else{
+                //create users
+                $roleId = 0;
+                if($request['role_id']){
+                    $roleId = $request['role_id'];
+                }
+                $saveResponse = $this->userService->createUser($request,$otp=null,$roleId);
+                if($saveResponse){
+                    $response = [];
+                    $response['token'] = $saveResponse;
+                    $response['user_name'] = $request['name'];
+                    $response['email'] = $request['email'];
+                    $response['role_id'] = $roleId;
+                    $msg =  __("api_string.assign_role_id");
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]); 
+                }
             }
-        }catch (\Throwable $th) {
-        $msg= __("api_string.error");
-        return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+       } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+       }
+    }
+
+    public function updateRole(Request $request){
+        try {
+            $valdiation = Validator::make($request->all(),[
+                'email' => 'required|email',
+                'role_id'=>'required'
+            ]);
+            if($valdiation->fails()) {
+                $msg = __("api_string.invalid_fields");
+                return response()->json(["message"=>$msg, "statusCode"=>422]);
+            }
+
+            $updateResponse = $this->userService->updateRoleByUserEmail($request);
+            if($updateResponse){
+                $msg = __("api_string.role_updated");
+                return response()->json(['statusCode'=>200,'Status'=>true,'msg'=>$msg]);
+            }else{
+                $msg = __("api_string.role_updated_status");
+                return response()->json(['statusCode'=>200,'Status'=>true,'msg'=>$msg]);
+            }
+            // dd($updateResponse);
+        } catch (\Throwable $th) {
+            //throw $th;
         }
     }
     public function login(Request $request){ 
