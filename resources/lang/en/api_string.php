@@ -6,8 +6,8 @@ return [
      'error' => 'Something went wrong!',
      'email_not_varified'=>'Email is not verified.We have sent a verification code to your mail, please verify it',
      'email_already_varified'=>'Email is already verified',
-     'verify_email'=>'You have been successfully registered, We have sent a verification code to your mail,plaese verify it!',
-     'successfully_verfied'=>'your email is successfully verifed!',
+     'verify_email'=>'You have been successfully registered, We have sent a verification code to your mail,please verify it!',
+     'successfully_verfied'=>'your email is successfully verified!',
      'otp_not_verfied'=>'invalid OTP,ask to resend otp to your registerd email!',
      'resend_verify_email'=>'email verifcation otp is again sent to your registered email.',
      'empty_response'=>'couldnot find any record...',
@@ -20,8 +20,8 @@ return [
      'verifie_your_email'=>'email is not varified ....please verify it first',
      'email_not_exist'=>'user does not exist',
      'incorrect_otp' => 'Incorrect otp, Please enter correct otp!',
-     'email_exist' => 'Incorrect email!',
-     'resent_otp' => 'We have resend otp on your mail, plese check again!',
+     'email_exist' => 'email does not exist',
+     'resent_otp' => 'We have resend otp on your mail, please check again!',
      'incorrect_password' => "Incorrect password!",
      'reset_password' => 'password has been reset successfully',
      'login' => 'Login successfully.',
@@ -38,4 +38,6 @@ return [
      'assign_role_id' => 'Please choose roles!',
      'role_updated'=>'role id updated successfully',
      'role_updated_status'=>'role  updations failed',
+     'user_role_token'=>'user role has been updated while logging in with google  and  token generated',
+     'login_success'=>'Congratulations ! you have successfully logged in'
 ];

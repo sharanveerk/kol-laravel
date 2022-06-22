@@ -18,15 +18,17 @@ Route::middleware(['api'])->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('login-with-google', [AuthController::class, 'loginWithGoogle']);
     Route::put('update-role', [AuthController::class, 'updateRole']);
+    //reset password if user forgot his password
     Route::patch('check-email-forgot-password',[AuthController::Class,'checkEmailForgotPassword']);
-    Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
-    // Route::get('user_verification',[AuthController::Class,'user_verification'])->name('user_verification');
     Route::put('forgot-password',[AuthController::Class,'forgotPassword']);
     Route::get('varifyResetpassword',[ResetPasswordController::Class,'varifyResetpassword'])->name('varifyResetpassword');
     Route::post('changePassword',[ResetPasswordController::Class,'changePassword'])->name('changePassword');
-    // Route::post('resetPassword', [ResetPasswordController::class, 'resetPassword']);
+    //ask for otp if first time otp not get 
     Route::post('resend-verification-email', [AuthController::class, 'sendVerificationEmail']);
     Route::post('logout', [AuthController::class, 'logout']);
+
+
+    Route::get('get/roles', [AuthController::class, 'getRoles']);
     
   });
 
