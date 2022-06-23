@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Models\Category;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,8 +14,23 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $records = Category::orderBy('id','desc')->with('getCategoryParent')->get();
+    // dd($records);
+    $filterData = [];
+    $i = 0;
+    foreach($records as $record){
+        $filterData[$i]['name'] = $record['name'];
+        $filterData[$i]['description'] = $record['description'];
+        $filterData[$i]['parent_name'] = $record['getCategoryParent'];
+        $filterData[$i]['image'] = $record['image'];
+        $filterData[$i]['status'] = $record['status'];
+        $i++;
+
+    }
+    dd($filterData);
+    return $allCategoriesData ;;
 });
+
 
 Auth::routes();
 Route::get('/home', function () {
@@ -25,15 +40,12 @@ Route::get('/home', function () {
 Route::group(['middleware' =>  'isAdmin'], function() {
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+  
 
 });
 Route::get('/check', [AuthController::class,'checkLogin'])->middleware('role_id');
 
 
 Route::get('phone-auth', [\App\Http\Controllers\PhoneAuthController::class, 'index']);
-
-// Route::group(['middleware' => ['admin']], function () {
-//     Route::get('login',[DashboardController::class,'index'])->middelware->;
-// });
 Route::get('admin/routes', [DashboardController::class,'index'])->middleware('admin');
 

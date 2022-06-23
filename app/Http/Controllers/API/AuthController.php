@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -11,6 +10,7 @@ use App\Models\User;
 use App\Models\UserAddress;
 use Validator;
 use Mail;
+use Config;
 use JWTAuth;
 use App\Models\UserTokens;
 use Illuminate\Mail\Mailable;
@@ -33,9 +33,21 @@ class AuthController extends Controller
      * call user service function to save record in database and send mail to user for verification the valid mail
      * @param request
      * @return json format
-     * @author Vikaram
+     * @author Vikram
      */
     
+
+//      public function getRoles(Request $request)
+//      {
+//         $role_id=$request['role_id'];
+//         $roles=Config::get('app.roles');
+//         if (in_array("Joe", $roles))
+//   {
+//       echo "Match found";
+//   } else  {
+//       echo "Match not found";
+//   }
+//      }
     public function registration(Request $request) {
         try {
             $valdiation = Validator::make($request->all(),[
@@ -56,9 +68,9 @@ class AuthController extends Controller
                         if($token){
                             $response = [];
                             $response['token'] = $token;
-                            $response['user_name'] = $request['name'];
-                            $response['email'] = $request['email'];
-                            $response['role_id'] = $request['role_id'];
+                            $response['user_name'] = $checkEmail['name'];
+                            $response['email'] = $checkEmail['email'];
+                            $response['role_id'] = $checkEmail['role_id'];
                             $msg =  __("api_string.user_register_by_firebase");
                             return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
                         }else{
@@ -67,7 +79,7 @@ class AuthController extends Controller
                         }
                 }else{
                     //create users
-                    $saveResponse = $this->userService->createUser($request,$otp=null);
+                    $saveResponse = $this->userService->createUser($request,$otp=null,$request['role_id']);
                     if($saveResponse){
                         $response = [];
                         $response['token'] = $saveResponse;
@@ -85,13 +97,13 @@ class AuthController extends Controller
                 if($checkEmail){
                         // move to login
                     $msg=__("api_string.user_exist");
-                    return response()->json(["status"=>true,'statusCode'=>301,"message"=>$msg]);
+                    return response()->json(["status"=>false,'statusCode'=>301,"message"=>$msg]);
                 }else{
                     //create users
-                    $saveResponse = $this->userService->createUser($request,$otp);
+                    $saveResponse = $this->userService->createUser($request,$otp,$request['role_id']);
                     if($saveResponse){
                         $msg =  __("api_string.verify_email");
-                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"email"=>$request['email']]); 
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,'otp'=>$otp,"role_id"=>$request['role_id'],"email"=>$request['email'],]); 
                     }
                 }
             }
@@ -124,13 +136,17 @@ class AuthController extends Controller
             $otp = $request['otp'];
             $checkValidOtp = $this->userService->checkOtp($request);
             if($checkValidOtp){ 
-                if($checkValidOtp['is_varified'] !== 1){
+                if($checkValidOtp['is_varified'] != 1){
                     $makeUserVerify = $this->userService->makeUserVerifiy($otp);
                     if($makeUserVerify){
                         $verifyToken = $this->userService->verifyEmailOtp($otp,$checkValidOtp['id']);
                          $response = [];
-                         $response['token'] = $verifyToken;
-                         $response['user_details'] = $checkValidOtp;
+                        $response['token'] = $verifyToken['token'];
+                        $response['user_name'] = $checkValidOtp['name'];
+                        $response['email'] = $checkValidOtp['email'];
+                        $response['role_id'] = $checkValidOtp['role_id'];
+                        $response['otp'] = $checkValidOtp['otp'];
+                        $response['status'] = $checkValidOtp['status'];
                          if($verifyToken){
                             $msg =  __("api_string.successfully_verfied");
                             return response()->json(["statusCode"=>200, "status"=>true, "message"=>$msg, "data"=>$response]);
@@ -154,14 +170,102 @@ class AuthController extends Controller
             return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }    
     }
-    /**
-     * @param request
-     * validate data, check mail exit or not generate otp, 
-     * @return mail message
-     * @author sharanveer kannaujiya
-     * 
-     */
     
+    
+
+    public function loginWithGoogle(Request $request){
+       try {
+            $valdiation = Validator::make($request->all(),[
+                'name' => 'required',
+                'email' => 'required|email',
+                'firebase_token'=>'required'
+            ]);
+            if($valdiation->fails()) {
+                $msg = __("api_string.invalid_fields");
+                return response()->json(["message"=>$msg, "statusCode"=>422]);
+            }
+            $checkEmail = $this->userService->checkEmail($request['email']);
+            if($checkEmail){
+                if($checkEmail['role_id'] !==0){
+                     $token = $this->userService->generateJwtToken($checkEmail);
+                    if($token){
+                        $response = [];
+                        $response['token'] = $token;
+                        $response['user_name'] = $checkEmail['name'];
+                        $response['email'] = $checkEmail['email'];
+                        $response['role_id'] = $checkEmail['role_id'];
+                        $msg =  __("api_string.login_success");
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);     
+                    }else{
+                        $msg = __("api_string.error");
+                        return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);                
+                    }
+                }else{
+                    $msg = __("api_string.error");
+                    return response()->json(["status"=>false, "statusCode"=>500,"message"=>$msg]);
+                }
+            }else{
+                //create users
+                $roleId = 0;
+                if($request['role_id']){
+                    $roleId = $request['role_id'];
+                }
+                $saveResponse = $this->userService->createUser($request,$otp=null,$roleId);
+                if($saveResponse){
+                    $response = [];
+                    // $response['token'] = $saveResponse;
+                    $response['user_name'] = $request['name'];
+                    $response['email'] = $request['email'];
+                    $response['role_id'] = $roleId;
+                    $msg =  __("api_string.assign_role_id");
+                    return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]); 
+                }
+            }
+       } catch (\Throwable $th) {
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+       }
+    }
+
+    public function updateRole(Request $request){
+        try {
+            $valdiation = Validator::make($request->all(),[
+                'email' => 'required|email',
+                'role_id'=>'required',
+
+            ]);
+            if($valdiation->fails()) {
+                $msg = __("api_string.invalid_fields");
+                return response()->json(["message"=>$msg, "statusCode"=>422]);
+            }
+            $checkEmail = $this->userService->checkEmail($request['email']);
+            if($checkEmail && $checkEmail['role_id']== 0){
+                $updateResponse = $this->userService->updateRoleByUserEmail($request);
+                if($updateResponse){
+                    $token = $this->userService->generateJwtToken($checkEmail);
+                    if($token){
+                        $response = [];
+                        $response['token'] = $token;
+                        $response['user_name'] = $checkEmail['name'];
+                        $response['email'] = $checkEmail['email'];
+                        $response['role_id'] = $request['role_id'];
+                        $msg =  __("api_string.user_role_token");
+                        return response()->json(["status"=>true,'statusCode'=>201,"message"=>$msg,"data"=>$response]);
+                    }else{
+                        $msg = __("api_string.role_updated_status");
+                        return response()->json(['statusCode'=>204,'Status'=>false,'msg'=>$msg]);
+                    }
+                }
+            }
+
+        else{
+            $msg = __("api_string.error");
+            return response()->json(['statusCode'=>500,'Status'=>false,'msg'=>$msg]);
+        }
+    } catch (\Throwable $th) {
+            $msg= __("api_string.error");
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
+        }
+    }
     public function login(Request $request){ 
         try {
             $valdiation = Validator::make($request->all(), [
@@ -183,7 +287,9 @@ class AuthController extends Controller
                     if($checkEmail['is_varified'] == 1){
                         $response = [];
                         $response['token'] = $checkPass;
-                        $response['user_details'] = $checkEmail;
+                        $response['user_name'] = $checkEmail['name'];
+                        $response['email'] = $checkEmail['email'];
+                        $response['role_id'] = $checkEmail['role_id'];
                         $msg= __("api_string.login");
                         return response()->json(["statusCode"=>200,"status"=>true,"message"=>$msg, "data"=>$response]);
                     }else{
@@ -299,7 +405,7 @@ class AuthController extends Controller
                 //email does not exist
             }
         } catch (\Throwable $th) {
-            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
 
@@ -327,7 +433,7 @@ class AuthController extends Controller
                     $updateOtp = $this->userService->insertNewOtp($otp,$checkEmail['id'],$checkEmail['email_verification_code'], $request['email']);
                     if($updateOtp){
                         $msg= __("api_string.send_verification_code");
-                        return response()->json(["statusCode"=>200,"status"=>true,"message"=>$msg,'otp'=>$otp]);
+                        return response()->json(["statusCode"=>200,"status"=>true,"message"=>$msg,'otp'=>$otp,"email"=>$request['email']]);
                     }
                 }else{
                     $msg= __("api_string.verifie_your_email");
@@ -338,7 +444,7 @@ class AuthController extends Controller
                 return response()->json(["statusCode"=>401,"status"=>false,"message"=>$msg]);
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
     
@@ -362,58 +468,55 @@ class AuthController extends Controller
                 $checkValidOtp = $this->userService->checkOtp($request);
                 if($checkValidOtp){
                     $token = $this->userService->updatePassword($request,$checkEmail['id'],$checkEmail['email']);
-                    $response = [];
-                    $response['token'] = $token;
-                    $response['user_details'] = $checkEmail;
                     $msg= __("api_string.reset_password");
-                    return response()->json(["statusCode"=>201,"status"=>true,"message"=>$msg,"data"=>$response]);
+                    return response()->json(["statusCode"=>201,"status"=>true,"message"=>$msg]);
                   
                 }else{
-                    // invalid otp
+                    $msg= __("api_string.incorrect_otp");
+                    return response()->json(["statusCode"=>401,"status"=>true,"message"=>$msg]);
                 }
             }else{
-                $msg= __("api_string.verifie_your_email");
+                $msg= __("api_string.email_exist");
                 return response()->json(["statusCode"=>401,"status"=>false,"message"=>$msg]);
             }
 
         } catch (\Throwable $th) {
-            //throw $th;
+            return response()->json(["statusCode"=>500,"status"=>false,"message"=>$th->getMessage()]);
         }
     }
-
-    public function forgetPasswords(Request $request)
-    {
-        $valdiation = Validator::make($request->all(),[
-            'email' => 'required|email',
-        ]);
-        if($valdiation->fails()) {
-            $msg = __("api_string.invalid_fields");
-            return response()->json(["message"=>$msg, "statusCode"=>401]);
-        }
-         $response = $this->userService->forgetPassword($request);
-          if(($response)==true){
-            $msg = __("api_string.forget_password_link");
-                $response1 = [];
-                $response1['message'] = $msg;
-                $response1['statusCode'] =200;
-                $response1['email'] =$request->email;
-                return response()->json(["Email"=>$response1['email'],"statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
-        }
-       elseif(($response)==false)
-       {
-        $msg = __("api_string.verifie_your_email");
-        $response1 = [];
-        $response1['message'] = $msg;
-        $response1['statusCode'] =401;
-        return response()->json(["statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
-       }
-       else
-       {
-           dd($response);
-        $msg = __("api_string.email_not_exist");
-        return response()->json(["Status"=>false,"message"=>$msg, "statusCode"=>401]);
-       }
-    }
+    // public function forgetPasswords(Request $request)
+    // {
+    //     $valdiation = Validator::make($request->all(),[
+    //         'email' => 'required|email',
+    //     ]);
+    //     if($valdiation->fails()) {
+    //         $msg = __("api_string.invalid_fields");
+    //         return response()->json(["message"=>$msg, "statusCode"=>401]);
+    //     }
+    //      $response = $this->userService->forgetPassword($request);
+    //       if(($response)==true){
+    //         $msg = __("api_string.forget_password_link");
+    //             $response1 = [];
+    //             $response1['message'] = $msg;
+    //             $response1['statusCode'] =200;
+    //             $response1['email'] =$request->email;
+    //             return response()->json(["Email"=>$response1['email'],"statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
+    //     }
+    //    elseif(($response)==false)
+    //    {
+    //     $msg = __("api_string.verifie_your_email");
+    //     $response1 = [];
+    //     $response1['message'] = $msg;
+    //     $response1['statusCode'] =401;
+    //     return response()->json(["statusCode"=>$response1['statusCode'],"status"=>true,"message"=>$response1['message']]);
+    //    }
+    //    else
+    //    {
+    
+    //     $msg = __("api_string.email_not_exist");
+    //     return response()->json(["Status"=>false,"message"=>$msg, "statusCode"=>401]);
+    //    }
+    // }
     
     public function getUserDetailsByID(Request $request){
         $user = Auth::user();
